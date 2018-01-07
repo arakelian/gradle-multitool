@@ -10,7 +10,7 @@ class MultitoolPlugin implements Plugin<Project> {
 
         // we expose this configuration
         project.configurations.create('provided')
-        
+
         project.task("shadowSources", type: ShadowSources) {
             group = "Multitool"
             description = "Shadow source files"
@@ -28,48 +28,61 @@ class MultitoolPlugin implements Plugin<Project> {
         }
 
         if(project.plugins.hasPlugin("java")) {
-	        if(project.extensions.multitool.configureProvided) {
+            if(project.extensions.multitool.configureProvided) {
                 configureJavaProvided(project)
             }
-            
+
+            if(project.extensions.multitool.configureTestLogging) {
+                configureTestLogging(project)
+            }
+
             if(project.plugins.hasPlugin("eclipse")) {
                 configureEclipseClasspath(project)
             }
-            
+
             if(project.plugins.hasPlugin("signing") && project.plugins.hasPlugin("maven")) {
-				if (project.hasProperty('nexusUsername')) {
-	                configureNexusUpload(project)
-				}
+                if (project.hasProperty('nexusUsername')) {
+                    configureNexusUpload(project)
+                }
             }
         }
-        
+
         if(project.extensions.multitool.configureRepos) {
             configureRepositories(project)
         }
 
         project.afterEvaluate {
-	        if(project.plugins.hasPlugin("java")) {
-	            configureJava8(project)
-	            
-		        if(project.extensions.multitool.configureJavaArtifacts) {
-		            configureJavaArtifacts(project)
-		        }
-	        }
+            if(project.plugins.hasPlugin("java")) {
+                configureJava8(project)
+
+                if(project.extensions.multitool.configureJavaArtifacts) {
+                    configureJavaArtifacts(project)
+                }
+            }
             executeCommandShorcuts(project)
         }
     }
 
+    void configureTestLogging(Project project) {
+        project.test {
+            afterTest { description, result ->
+                // nice to see test results as they are executed
+                println "${description.className} > ${description.name}  ${result.resultType}"
+            }
+        }
+    }
+
     void configureRepositories(Project project) {
-		project.repositories {
-		    // prefer locally built artifacts
-		    mavenLocal()
-		
-		    // use external repos as fallback
-		    mavenCentral()
-		    jcenter()
-		}
-	}
-    
+        project.repositories {
+            // prefer locally built artifacts
+            mavenLocal()
+
+            // use external repos as fallback
+            mavenCentral()
+            jcenter()
+        }
+    }
+
     void configureJava8(Project project) {
         project.tasks.withType(org.gradle.api.tasks.compile.JavaCompile) {
             sourceCompatibility = project.extensions.multitool.javaVersion
@@ -85,7 +98,7 @@ class MultitoolPlugin implements Plugin<Project> {
             }
         }
     }
-    
+
     void configureJavaArtifacts(Project project) {
         // Maven Central requires Javadocs
         project.task("javadocJar", type: org.gradle.jvm.tasks.Jar, dependsOn:project.classes) {
@@ -116,7 +129,7 @@ class MultitoolPlugin implements Plugin<Project> {
         // mimic Maven 'provided' configuration, as suggested in GRADLE-784
         def provided = project.configurations.provided
         provided.extendsFrom(project.configurations.compile)
-        
+
         project.configurations {
             // we route everything through SLF4J so no JCL
             all*.exclude group: 'commons-logging'
@@ -219,63 +232,63 @@ class MultitoolPlugin implements Plugin<Project> {
             }
         }
     }
-    
+
     void configureNexusUpload(Project project) {
-	    project.signing {
-	        sign configurations.archives
-	    }
-	
-	    // note: nexus credentials are typically kept in ~/.gradle/gradle.properties
-	    project.uploadArchives {
-	        repositories {
-	            // deploy locally
-	            mavenLocal()
-	
-	            // see: http://central.sonatype.org/pages/gradle.html
-	            mavenDeployer {
-	                beforeDeployment {
-	                    org.gradle.api.artifacts.maven.MavenDeployment deployment -> project.signing.signPom(deployment)
-	                }
-	
-	                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-	                    authentication(userName: nexusUsername, password: nexusPassword)
-	                }
-	
-	                snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-	                    authentication(userName: nexusUsername, password: nexusPassword)
-	                }
-	
-	                pom.project {
-	                    name project.name
-	                    packaging 'jar'
-	                    description project.description
-	
-	                    url 'https://github.com/arakelian/' + project.name
-	                    scm {
-	                        connection 'scm:git:https://github.com/arakelian/' + project.name + '.git'
-	                        developerConnection 'scm:git:git@github.com:arakelian/' + project.name + '.git'
-	                        url 'https://github.com/arakelian/' + project.name + '.git'
-	                    }
-	
-	                    licenses {
-	                        license {
-	                            name 'Apache License 2.0'
-	                            url 'https://www.apache.org/licenses/LICENSE-2.0'
-	                            distribution 'repo'
-	                        }
-	                    }
-	
-	                    developers {
-	                        developer {
-	                            id = 'arakelian'
-	                            name = 'Greg Arakelian'
-	                            email = 'greg@arakelian.com'
-	                        }
-	                    }
-	                }
-	            }
-	        }
-	    }
+        project.signing {
+            sign configurations.archives
+        }
+
+        // note: nexus credentials are typically kept in ~/.gradle/gradle.properties
+        project.uploadArchives {
+            repositories {
+                // deploy locally
+                mavenLocal()
+
+                // see: http://central.sonatype.org/pages/gradle.html
+                mavenDeployer {
+                    beforeDeployment {
+                        org.gradle.api.artifacts.maven.MavenDeployment deployment -> project.signing.signPom(deployment)
+                    }
+
+                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                        authentication(userName: nexusUsername, password: nexusPassword)
+                    }
+
+                    snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                        authentication(userName: nexusUsername, password: nexusPassword)
+                    }
+
+                    pom.project {
+                        name project.name
+                        packaging 'jar'
+                        description project.description
+
+                        url 'https://github.com/arakelian/' + project.name
+                        scm {
+                            connection 'scm:git:https://github.com/arakelian/' + project.name + '.git'
+                            developerConnection 'scm:git:git@github.com:arakelian/' + project.name + '.git'
+                            url 'https://github.com/arakelian/' + project.name + '.git'
+                        }
+
+                        licenses {
+                            license {
+                                name 'Apache License 2.0'
+                                url 'https://www.apache.org/licenses/LICENSE-2.0'
+                                distribution 'repo'
+                            }
+                        }
+
+                        developers {
+                            developer {
+                                id = 'arakelian'
+                                name = 'Greg Arakelian'
+                                email = 'greg@arakelian.com'
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     void executeCommandShorcuts(Project project) {

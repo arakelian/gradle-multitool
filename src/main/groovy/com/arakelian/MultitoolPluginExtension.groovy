@@ -8,6 +8,7 @@ class MultitoolPluginExtension {
     boolean configureRepos = true
     boolean configureJavaArtifacts = true
     boolean configureProvided = true
+    boolean configureTestLogging = true
     boolean removeSnapshotFromReadmeVersion = false
     
     // useful macros, you can add your own
