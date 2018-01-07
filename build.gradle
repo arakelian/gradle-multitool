@@ -7,7 +7,6 @@ plugins {
 }
 
 group               = 'com.arakelian'
-version             = "1.0.13"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -37,8 +36,8 @@ uploadArchives {
 }
 
 pluginBundle {
-    website = 'http://www.gradle.org/'
-    vcsUrl = 'https://github.com/gradle/gradle'
+    website = 'https://github.com/arakelian/gradle-multitool'
+    vcsUrl = 'https://github.com/arakelian/gradle-multitool'
     description = 'Experimental plugin that provides several use utilities'
     tags = ['multitool','experimental']
 
@@ -46,6 +45,7 @@ pluginBundle {
         greetingsPlugin {
             id = 'com.arakelian.multitool'
             displayName = 'Gradle Multitool Plugin'
+            tags = ['multitool', 'experimental']
         }
     }
 }
