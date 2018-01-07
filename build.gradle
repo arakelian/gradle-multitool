@@ -6,7 +6,7 @@ plugins {
     id 'maven'
 }
 
-group               = 'com.arakelian'
+group  = 'com.arakelian'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

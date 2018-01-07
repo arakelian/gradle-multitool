@@ -9,7 +9,7 @@ class UpdateReadme extends DefaultTask {
     @TaskAction
     def action() {
         def nextVersion = project.version
-        if(false && project.version.endsWith('-SNAPSHOT')) {
+        if(project.extensions.multitool.removeSnapshotFromReadmeVersion && project.version.endsWith('-SNAPSHOT')) {
             // after committing the README file the project version will not have SNAPSHOT on it
             nextVersion = project.version.substring(0, project.version.length() -'-SNAPSHOT'.length())
         }
