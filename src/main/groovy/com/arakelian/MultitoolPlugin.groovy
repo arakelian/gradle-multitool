@@ -28,10 +28,6 @@ class MultitoolPlugin implements Plugin<Project> {
             description = "Update version number in README file"
         }
         
-        if(project.plugins.hasPlugin("java")) {
-            configureJarArtifacts(project)
-        }        
-        
         project.afterEvaluate {
             doAfterEvaluate(project)
         }
@@ -43,6 +39,7 @@ class MultitoolPlugin implements Plugin<Project> {
         if(project.plugins.hasPlugin("java")) {
             configureJava8(project)
             configureJavaProvided(project)
+            configureJarArtifacts(project)
             configureTestLogging(project)
             configureEclipseClasspath(project)
             configureNexusUpload(project)
