@@ -2,6 +2,7 @@ package com.arakelian
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 class MultitoolPlugin implements Plugin<Project> {
     void apply(Project project) {
@@ -26,44 +27,36 @@ class MultitoolPlugin implements Plugin<Project> {
             group = "Multitool"
             description = "Update version number in README file"
         }
-
+        
         if(project.plugins.hasPlugin("java")) {
-            if(project.extensions.multitool.configureProvided) {
-                configureJavaProvided(project)
-            }
-
-            if(project.extensions.multitool.configureTestLogging) {
-                configureTestLogging(project)
-            }
-
-            if(project.plugins.hasPlugin("eclipse")) {
-                configureEclipseClasspath(project)
-            }
-
-            if(project.plugins.hasPlugin("signing") && project.plugins.hasPlugin("maven")) {
-                if (project.hasProperty('nexusUsername')) {
-                    configureNexusUpload(project)
-                }
-            }
-        }
-
-        if(project.extensions.multitool.configureRepos) {
-            configureRepositories(project)
-        }
-
+            configureJarArtifacts(project)
+        }        
+        
         project.afterEvaluate {
-            if(project.plugins.hasPlugin("java")) {
-                configureJava8(project)
-
-                if(project.extensions.multitool.configureJavaArtifacts) {
-                    configureJavaArtifacts(project)
-                }
-            }
-            executeCommandShorcuts(project)
+            doAfterEvaluate(project)
         }
     }
 
+    void doAfterEvaluate(Project project) {
+        configureRepositories(project)
+
+        if(project.plugins.hasPlugin("java")) {
+            configureJava8(project)
+            configureJavaProvided(project)
+            configureTestLogging(project)
+            configureEclipseClasspath(project)
+            configureNexusUpload(project)
+            configureShadow(project)
+        }
+        
+        executeCommandShorcuts(project)
+    }
+
     void configureTestLogging(Project project) {
+        if(!project.extensions.multitool.configureTestLogging) {
+            return;
+        }
+        
         project.test {
             afterTest { description, result ->
                 // nice to see test results as they are executed
@@ -73,6 +66,10 @@ class MultitoolPlugin implements Plugin<Project> {
     }
 
     void configureRepositories(Project project) {
+        if(!project.extensions.multitool.configureRepos) {
+            return;
+        }
+        
         project.repositories {
             // prefer locally built artifacts
             mavenLocal()
@@ -99,7 +96,7 @@ class MultitoolPlugin implements Plugin<Project> {
         }
     }
 
-    void configureJavaArtifacts(Project project) {
+    void configureJarArtifacts(Project project) {
         // Maven Central requires Javadocs
         project.task("javadocJar", type: org.gradle.jvm.tasks.Jar, dependsOn:project.classes) {
             classifier = 'javadoc'
@@ -113,15 +110,23 @@ class MultitoolPlugin implements Plugin<Project> {
         }
 
         // other projects may want to extend our unit tests
-        project.task("testJar", type:org.gradle.jvm.tasks.Jar, dependsOn:project.testClasses) {
-            classifier = 'tests'
-            from project.sourceSets.test.output
+        if(!project.plugins.hasPlugin("com.github.johnrengelman.shadow")) {
+            project.task("testJar", type:org.gradle.jvm.tasks.Jar, dependsOn:project.testClasses) {
+                classifier = 'tests'
+                from project.sourceSets.test.output
+            }
+        } else {
+            project.task("testJar", type:ShadowJar, dependsOn:project.testClasses) {
+                classifier = 'tests'
+                from project.sourceSets.test.output
+                configurations = [project.configurations.testRuntime]
+            }
         }
 
         project.artifacts {
+            archives project.tasks.testJar
             archives project.tasks.javadocJar
             archives project.tasks.sourcesJar
-            archives project.tasks.testJar
         }
     }
 
@@ -131,8 +136,9 @@ class MultitoolPlugin implements Plugin<Project> {
         provided.extendsFrom(project.configurations.compile)
 
         project.configurations {
-            // we route everything through SLF4J so no JCL
-            all*.exclude group: 'commons-logging'
+            project.extensions.multitool.excludeGroups.each{ group ->
+	            all*.exclude group: group
+            }
         }
 
         project.sourceSets {
@@ -141,26 +147,78 @@ class MultitoolPlugin implements Plugin<Project> {
             test.runtimeClasspath += project.configurations.provided
         }
 
-        if(project.plugins.hasPlugin("idea")) {
-            project.idea {
-                module {
-                    //if you need to put 'provided' dependencies on the classpath
-                    scopes.PROVIDED.plus += [ configurations.provided ]
+        project.plugins.withType(org.gradle.plugins.ide.idea.IdeaPlugin, { plugin ->
+            project.plugins.withType(org.gradle.api.plugins.JavaPlugin, { javaPlugin ->
+                project.idea {
+                    module {
+                        //if you need to put 'provided' dependencies on the classpath
+                        scopes.PROVIDED.plus += [ project.configurations.provided ]
+                    }
                 }
-            }
-        }
+            })
+        })
     }
 
-    void configureJavaTests(Project project) {
-        project.test {
-            afterTest { desc, result ->
-                // nice to see test results as they are executed
-                println "${desc.className} > ${desc.name}  ${result.resultType}"
+    void configureShadow(Project project) {
+        if(!project.plugins.hasPlugin("com.github.johnrengelman.shadow")) {
+            if(project.extensions.multitool.relocates.size()!=0) {
+                throw new org.gradle.api.ProjectConfigurationException("Cannot specific multitool.relocates without shadow plugin",null);
+            }
+            return;
+        }
+        
+        project.sourceSets {
+            // shadow configuration is added by Shadow plugin, but it's only configured for the main sourceset
+            test.compileClasspath += project.configurations.shadow
+            test.runtimeClasspath += project.configurations.shadow
+        }
+
+        def shadowTasks = project.tasks.withType(ShadowJar)
+        shadowTasks.each { task ->
+            task.mergeServiceFiles()
+
+            // we don't want poms for third-party stuff
+            task.exclude 'META-INF/maven/**/*'
+
+            // we are only shadowing 'shadow' dependencies
+            task.configurations = [project.configurations.shadow]
+
+            // define relocations
+            project.extensions.multitool.relocates.each{ from, to ->
+                task.relocate from, to
             }
         }
+        
+        // disable original jar
+        def jar = project.tasks.jar
+        def jarArchivePath = jar.archivePath 
+        jar.enabled = false
+        
+        // shadow artifact is temporary resource that is processed by ProGuard to
+        // remove unused classes
+        def shadowJar = project.tasks.shadowJar
+        shadowJar.classifier = 'shadow'
+        
+        def minify = project.task("minify", type:proguard.gradle.ProGuardTask, dependsOn:shadowJar) {
+		    injars shadowJar.archivePath
+		    outjars jarArchivePath
+		    libraryjars project.fileTree(dir: "${System.getProperty('java.home')}/lib/", include: "*.jar")
+            project.extensions.multitool.keeps.each{ k -> keep k }
+		    dontskipnonpubliclibraryclassmembers
+		    dontobfuscate
+		    dontwarn
+        }
+        
+	    // make sure we minify first
+	    def assemble = project.tasks.assemble
+		assemble.dependsOn(minify)
     }
 
     void configureEclipseClasspath(Project project) {
+        if(!project.plugins.hasPlugin("eclipse")) {
+            return;
+        }
+        
         // Custom Eclipse .classpath generation to use project references instead of .jar references;
         // this allows us to do refactoring in Eclipse across projects
         // see: https://docs.gradle.org/current/dsl/org.gradle.plugins.ide.eclipse.model.EclipseClasspath.html
@@ -234,8 +292,14 @@ class MultitoolPlugin implements Plugin<Project> {
     }
 
     void configureNexusUpload(Project project) {
+        if(!project.plugins.hasPlugin("signing") ||
+                !project.plugins.hasPlugin("maven") || 
+                !project.hasProperty('nexusUsername')) {
+            return;
+        }
+        
         project.signing {
-            sign configurations.archives
+            sign project.configurations.archives
         }
 
         // note: nexus credentials are typically kept in ~/.gradle/gradle.properties
@@ -251,11 +315,11 @@ class MultitoolPlugin implements Plugin<Project> {
                     }
 
                     repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                        authentication(userName: nexusUsername, password: nexusPassword)
+                        authentication(userName: project.nexusUsername, password: project.nexusPassword)
                     }
 
                     snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                        authentication(userName: nexusUsername, password: nexusPassword)
+                        authentication(userName: project.nexusUsername, password: project.nexusPassword)
                     }
 
                     pom.project {

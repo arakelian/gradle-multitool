@@ -4,6 +4,12 @@ plugins {
     id "com.gradle.plugin-publish" version "0.9.9"
     id 'groovy'
     id 'maven'
+    id 'signing'
+    id 'eclipse'
+    id 'idea'
+    
+    // for building fat jar
+    id "com.github.johnrengelman.shadow" version "2.0.2"
 }
 
 group  = 'com.arakelian'
@@ -23,6 +29,12 @@ repositories {
 dependencies {
     compile gradleApi()
     compile localGroovy()
+    
+    // library is huge so we don't shadow it
+    compile 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
+
+    // proguard is not available via Maven so this is very convenient    
+    shadow files('lib/proguard.jar')
 }
 
 task wrapper(type: Wrapper) {
@@ -49,3 +61,26 @@ pluginBundle {
         }
     }
 }
+
+// we're going to build a fat jar
+jar.enabled = false
+
+shadowJar {
+    mergeServiceFiles()
+
+    // we don't want poms for third-party stuff
+    exclude 'META-INF/maven/**/*'
+
+    // we are only shadowing 'shadow' dependencies
+    configurations = [project.configurations.shadow]
+
+    // we are replacing fat jar
+    classifier = ''
+}
+
+
+// do not shadow until we have compiled everything
+shadowJar.dependsOn(classes)
+
+// make sure we shadow
+uploadArchives.dependsOn(shadowJar)
