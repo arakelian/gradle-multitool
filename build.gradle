@@ -83,4 +83,4 @@ shadowJar {
 shadowJar.dependsOn(classes)
 
 // make sure we shadow
-uploadArchives.dependsOn(shadowJar)
+assemble.dependsOn(shadowJar)

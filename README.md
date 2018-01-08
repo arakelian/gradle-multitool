@@ -1,47 +1,20 @@
-# Gradle Plugin Example and Tutorial
+# Gradle Multitool
 
-## The Tutorial
+This Gradle plugin does a few things:
 
-1. [Your First Gradle Plugin](tutorial/1-your-first-gradle-plugin.md)
-2. [Your First Plugin Test](tutorial/2-your-first-plugin-test.md)
-3. [Declaring Tasks the Right Way](tutorial/3-declaring-tasks-the-right-way.md)
-4. [Making Unit Testable Plugins](tutorial/4-making-unit-testable-plugins.md)
-5. [Making Configurable Plugins](tutorial/5-making-configurable-plugins.md)
+1. Configures Java builds for Java 8.  
+   * Source and target compatibility is set to 1.8. 
+   * Java compiler is configured to export names of constructor and method argument names.
 
-## What is a Gradle Plugin?
+2. Adds -sources, -javadoc, and -tests Jars to a Java build.
 
-Most fundamentally, a gradle plugin is library of code that, when loaded by Gradle build script, adds new functionality and capabilities to the build system.
+3. Adds a `provided` configuration for Java projects.
 
-Gradle ships with a lot of built in plugins. Most users are probably aware of the ``java`` for instance.
+4. Enables minification of Jar files that shadow dependencies using ProGuard.
 
-A typical ``build.gradle`` for java projects using the built in plugins might look like:
+5. Generates Eclipse classpath that has project dependencies for projects that you have checked out locally.
 
-``` groovy
-apply plugin: "java"
+6. Adds user-defined macros to Gradle command line, e.g. "all" option that is equivalent to 'clean build install'.
 
-repositories {
-	mavenCentral()
-}
 
-dependencies {
-	testCompile "junit:junit:4.+"
-}
-```
-
-In this case the ``java`` plugin adds some capabilities such as :
-
-- Compiling of java source code.
-- Running of java unit tests with junit.
-- Packaging of a java library in a JAR file.
-
-## Why would I want to write a Gradle plugin?
- 
-Custom gradle plugins are useful to add functionality to the build system in general. Rather than writing custom additions in your ``build.gradle`` you distribute your functionality as a plugin. This has a variety of benefits:
-
-- Organizations can capture common practices (configuration, application packaging, code standards, etc) in a plugin that is shared among many projects.
-- Plugins can be unit and integration tested seperately from a project. This increase the confidence of making build system changes.
-- Plugins are versioned, which allows projects to control change to their build system while still sharing functionality between projects.
-- Plugins allow you to add new functionality to the build system. Custom packaging formats, new ways of running tests, etc. 
-
-In my workplace we use a gradle plugin to accomplish all of the above. Our project ``build.gradle`` files are typically only declare dependencies, but still enable a wide variety of functionality for code analysis, packaging, integration testing, and other items. This funcionality is shared among a great many projects.
 
