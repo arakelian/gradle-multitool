@@ -2,6 +2,7 @@ package com.arakelian
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.compile.JavaCompile
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 class MultitoolPlugin implements Plugin<Project> {
@@ -78,7 +79,7 @@ class MultitoolPlugin implements Plugin<Project> {
     }
 
     void configureJava8(Project project) {
-        project.tasks.withType(org.gradle.api.tasks.compile.JavaCompile) {
+        project.tasks.withType(JavaCompile) { task ->
             sourceCompatibility = project.extensions.multitool.javaVersion
             targetCompatibility = project.extensions.multitool.javaVersion
 
@@ -170,8 +171,7 @@ class MultitoolPlugin implements Plugin<Project> {
             test.runtimeClasspath += project.configurations.shadow
         }
 
-        def shadowTasks = project.tasks.withType(ShadowJar)
-        shadowTasks.each { task ->
+        project.tasks.withType(ShadowJar).each { task ->
             task.mergeServiceFiles()
 
             // we don't want poms for third-party stuff
@@ -195,11 +195,19 @@ class MultitoolPlugin implements Plugin<Project> {
         // remove unused classes
         def shadowJar = project.tasks.shadowJar
         shadowJar.classifier = 'shadow'
+
+        // ProGuard needs reference to JDK rt.jar
+        def javaHome = System.getProperty('java.home')
+        def libJars = project.fileTree(dir: javaHome + "/lib/", include: "*.jar")
         
+        // need to give it dependencies that were not compiled into jar
+        def compileJars = project.configurations.compile.getFiles()         
+        libJars += compileJars
+                 
         def minify = project.task("minify", type:proguard.gradle.ProGuardTask, dependsOn:shadowJar) {
 		    injars shadowJar.archivePath
 		    outjars jarArchivePath
-		    libraryjars project.fileTree(dir: "${System.getProperty('java.home')}/lib/", include: "*.jar")
+		    libraryjars libJars
             project.extensions.multitool.keeps.each{ k -> keep k }
 		    dontskipnonpubliclibraryclassmembers
 		    dontobfuscate
@@ -289,8 +297,7 @@ class MultitoolPlugin implements Plugin<Project> {
     }
 
     void configureNexusUpload(Project project) {
-        if(!project.plugins.hasPlugin("signing") ||
-                !project.plugins.hasPlugin("maven") || 
+        if(!project.plugins.hasPlugin("signing") || !project.plugins.hasPlugin("maven") || 
                 !project.hasProperty('nexusUsername')) {
             return;
         }
