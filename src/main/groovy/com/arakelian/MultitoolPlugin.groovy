@@ -28,7 +28,7 @@ class MultitoolPlugin implements Plugin<Project> {
             group = "Multitool"
             description = "Update version number in README file"
         }
-        
+
         project.afterEvaluate {
             doAfterEvaluate(project)
         }
@@ -46,7 +46,7 @@ class MultitoolPlugin implements Plugin<Project> {
             configureNexusUpload(project)
             configureShadow(project)
         }
-        
+
         executeCommandShorcuts(project)
     }
 
@@ -54,7 +54,7 @@ class MultitoolPlugin implements Plugin<Project> {
         if(!project.extensions.multitool.configureTestLogging) {
             return;
         }
-        
+
         project.test {
             afterTest { description, result ->
                 // nice to see test results as they are executed
@@ -67,7 +67,7 @@ class MultitoolPlugin implements Plugin<Project> {
         if(!project.extensions.multitool.configureRepos) {
             return;
         }
-        
+
         project.repositories {
             // prefer locally built artifacts
             mavenLocal()
@@ -135,7 +135,7 @@ class MultitoolPlugin implements Plugin<Project> {
 
         project.configurations {
             project.extensions.multitool.excludeGroups.each{ group ->
-	            all*.exclude group: group
+                all*.exclude group: group
             }
         }
 
@@ -164,7 +164,7 @@ class MultitoolPlugin implements Plugin<Project> {
             }
             return;
         }
-        
+
         project.sourceSets {
             // shadow configuration is added by Shadow plugin, but it's only configured for the main sourceset
             test.compileClasspath += project.configurations.shadow
@@ -185,12 +185,12 @@ class MultitoolPlugin implements Plugin<Project> {
                 task.relocate from, to
             }
         }
-        
+
         // disable original jar
         def jar = project.tasks.jar
-        def jarArchivePath = jar.archivePath 
+        def jarArchivePath = jar.archivePath
         jar.enabled = false
-        
+
         // shadow artifact is temporary resource that is processed by ProGuard to
         // remove unused classes
         def shadowJar = project.tasks.shadowJar
@@ -199,31 +199,35 @@ class MultitoolPlugin implements Plugin<Project> {
         // ProGuard needs reference to JDK rt.jar
         def javaHome = System.getProperty('java.home')
         def libJars = project.fileTree(dir: javaHome + "/lib/", include: "*.jar")
-        
+
         // need to give it dependencies that were not compiled into jar
-        def compileJars = project.configurations.compile.getFiles()         
+        def compileJars = project.configurations.compile.getFiles()
         libJars += compileJars
-                 
+
         def minify = project.task("minify", type:proguard.gradle.ProGuardTask, dependsOn:shadowJar) {
-		    injars shadowJar.archivePath
-		    outjars jarArchivePath
-		    libraryjars libJars
-            project.extensions.multitool.keeps.each{ k -> keep k }
-		    dontskipnonpubliclibraryclassmembers
-		    dontobfuscate
-		    dontwarn
+            injars shadowJar.archivePath
+            outjars jarArchivePath
+            libraryjars libJars
         }
-        
-	    // make sure we minify first
-	    def assemble = project.tasks.assemble
-		assemble.dependsOn(minify)
+
+        project.extensions.multitool.proguardOptions.each { key, value ->
+             if(value!=null) {
+                 minify."$key"(value)
+             } else {
+                 minify."$key"()
+             }
+        }
+
+        // make sure we minify first
+        def assemble = project.tasks.assemble
+        assemble.dependsOn(minify)
     }
 
     void configureEclipseClasspath(Project project) {
         if(!project.plugins.hasPlugin("eclipse")) {
             return;
         }
-        
+
         // Custom Eclipse .classpath generation to use project references instead of .jar references;
         // this allows us to do refactoring in Eclipse across projects
         // see: https://docs.gradle.org/current/dsl/org.gradle.plugins.ide.eclipse.model.EclipseClasspath.html
@@ -297,11 +301,11 @@ class MultitoolPlugin implements Plugin<Project> {
     }
 
     void configureNexusUpload(Project project) {
-        if(!project.plugins.hasPlugin("signing") || !project.plugins.hasPlugin("maven") || 
+        if(!project.plugins.hasPlugin("signing") || !project.plugins.hasPlugin("maven") ||
                 !project.hasProperty('nexusUsername')) {
             return;
         }
-        
+
         project.signing {
             sign project.configurations.archives
         }
