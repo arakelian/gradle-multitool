@@ -22,7 +22,7 @@ class MultitoolPluginExtension {
     // useful macros, you can add your own
     Map<String,List<String>> macros = [
         'all' : ['clean', 'classpath', 'build', 'install'],
-        'deploy' : ['upload', 'closeAndReleaseRepository'],
+        'deploy' : ['uploadArchives', 'closeAndReleaseRepository'],
         'classpath' : ['cleanEclipseClasspath', 'eclipseClasspath', 'eclipseFactoryPath', 'cleanIdeaModule', 'ideaModule'],
     ]
 
