@@ -109,15 +109,15 @@ class MultitoolPlugin implements Plugin<Project> {
             from project.sourceSets.main.allSource
         }
 
+        project.task("testJar", type:org.gradle.jvm.tasks.Jar, dependsOn:project.testClasses) {
+            classifier = 'tests'
+            from project.sourceSets.test.output
+        }
+
         // other projects may want to extend our unit tests
-        if(!project.plugins.hasPlugin("com.github.johnrengelman.shadow")) {
-            project.task("testJar", type:org.gradle.jvm.tasks.Jar, dependsOn:project.testClasses) {
-                classifier = 'tests'
-                from project.sourceSets.test.output
-            }
-        } else {
-            project.task("testJar", type:ShadowJar, dependsOn:project.testClasses) {
-                classifier = 'tests'
+        if(project.plugins.hasPlugin("com.github.johnrengelman.shadow")) {
+            project.task("shadowTestJar", type:ShadowJar, dependsOn:project.testClasses) {
+                classifier = 'shadow-tests'
                 from project.sourceSets.test.output
                 configurations = [project.configurations.testRuntime]
             }
@@ -186,6 +186,9 @@ class MultitoolPlugin implements Plugin<Project> {
             task.configurations = [project.configurations.shadow]
 
             project.extensions.multitool.relocates.each { pattern, destination ->
+                def prefix = project.extensions.multitool.relocatePrefixes[task.name]
+                destination = destination.replace('${prefix}', prefix!=null ? prefix : "")
+
                 task.relocate(pattern, destination) { relocator ->
                     project.extensions.multitool.includeInRelocation.each {
                         includePattern -> relocator.include includePattern
@@ -202,35 +205,58 @@ class MultitoolPlugin implements Plugin<Project> {
         def jarArchivePath = jar.archivePath
         jar.enabled = false
 
+        // build list of shadowed artifacts (irrespective of version)
+        Set shadowedArtifacts = []
+        project.configurations.shadow.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+             def id =  artifact.name + ":" + artifact.classifier
+             shadowedArtifacts += id
+        }
+
         // shadow artifact is temporary resource that is processed by ProGuard to
         // remove unused classes
         def shadowJar = project.tasks.shadowJar
         shadowJar.classifier = 'shadow'
 
-        // build list of shadowed artifacts (irrespective of version) 
-        Set showedArtifacts = []
-		project.configurations.shadow.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-		     def id =  artifact.name + ":" + artifact.classifier
-		     showedArtifacts += id
-		}
+        // minify -shadow.jar to .jar
+        configureProguard(project,
+            "minifyJar",
+            shadowedArtifacts,
+            project.configurations.compile.resolvedConfiguration.resolvedArtifacts,
+            shadowJar,
+            jarArchivePath)
 
+
+        def testJar = project.tasks.testJar
+        def testJarArchivePath = testJar.archivePath
+        testJar.enabled = false
+
+        // minify -shadow-tests.jar to -tests.jar
+        configureProguard(project,
+            "minifyTestsJar",
+            shadowedArtifacts,
+            project.configurations.testCompile.resolvedConfiguration.resolvedArtifacts,
+            project.tasks.shadowTestJar,
+            testJarArchivePath)
+    }
+
+    void configureProguard(Project project, String name, Set shadowedArtifacts, Set resolvedArtifacts, Object shadowJarTask, File jarArchivePath) {
         // ProGuard needs reference to JDK rt.jar
         def javaHome = System.getProperty('java.home')
         def libJars = project.fileTree(dir: javaHome + "/lib/", include: "*.jar")
 
         // ProGuard needs reference to jars that we didn't shadow
-		project.configurations.compile.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-		     def id =  artifact.name + ":" + artifact.classifier
-		     if(!showedArtifacts.contains(id)) {
-		         libJars += artifact.file
-		     }
-		}
-        
-        // create ProGuard task to do minification (e.g. removing class files we don't use) 
-        def minify = project.task("minify", type:proguard.gradle.ProGuardTask, dependsOn:shadowJar) {
-            injars shadowJar.archivePath
-            outjars jarArchivePath
-            libraryjars libJars
+        resolvedArtifacts.each { artifact ->
+             def id =  artifact.name + ":" + artifact.classifier
+             if(!shadowedArtifacts.contains(id)) {
+                 libJars += artifact.file
+             }
+        }
+
+        // create ProGuard task to do minification (e.g. removing class files we don't use)
+        def minify = project.task(name, type:proguard.gradle.ProGuardTask, dependsOn:shadowJarTask) {
+            injars project.extensions.multitool.injarsFilters, shadowJarTask.archivePath
+            outjars project.extensions.multitool.outjarsFilters, jarArchivePath
+            libraryjars project.extensions.multitool.libraryjarsFilters, libJars
         }
 
         // configure ProGuard
