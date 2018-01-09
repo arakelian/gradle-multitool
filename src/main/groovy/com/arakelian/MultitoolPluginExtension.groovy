@@ -19,6 +19,7 @@ class MultitoolPluginExtension {
         'commons-logging'
     ]
 
+
     // useful macros, you can add your own
     Map<String,List<String>> macros = [
         'all' : ['clean', 'classpath', 'build', 'install'],
@@ -26,17 +27,26 @@ class MultitoolPluginExtension {
         'classpath' : ['cleanEclipseClasspath', 'eclipseClasspath', 'eclipseFactoryPath', 'cleanIdeaModule', 'ideaModule'],
     ]
 
-    // relocates; requires "com.github.johnrengelman.shadow" plugin
+    // NOTE: requires "com.github.johnrengelman.shadow" plugin
     Map<String,String> relocates = [:]
 
-   // ProGuard options for minification
+    // package patterns to include in relocation
+    List<String> includeInRelocation = [
+        'com.arakelian.*'
+    ]
+
+    // package patterns to exclude from relocation
+    List<String> excludeFromRelocation = [
+    ]
+
+    // ProGuard options for minification
     Map<String,Object> proguardOptions = [
         // this work for us, but other clients will want to change this
         'keep' : 'class com.arakelian.** { *; }',
-        
+
         // see: https://sourceforge.net/p/proguard/bugs/459/
         'optimizations' : '!code/allocation/variable,!class/unboxing/*,!method/marking/*',
-        
+
         'optimizationpasses' : 5,
         'dontskipnonpubliclibraryclassmembers' : null,
         'dontobfuscate' : null,

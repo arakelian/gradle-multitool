@@ -4,6 +4,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.compile.JavaCompile
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
+import java.util.regex.Pattern
 
 class MultitoolPlugin implements Plugin<Project> {
     void apply(Project project) {
@@ -176,13 +178,22 @@ class MultitoolPlugin implements Plugin<Project> {
 
             // we don't want poms for third-party stuff
             task.exclude 'META-INF/maven/**/*'
+            task.exclude 'META-INF/**/*.SF'
+            task.exclude 'META-INF/**/*.DSA'
+            task.exclude 'META-INF/**/*.RSA'
 
             // we are only shadowing 'shadow' dependencies
             task.configurations = [project.configurations.shadow]
 
-            // define relocations
-            project.extensions.multitool.relocates.each{ from, to ->
-                task.relocate from, to
+            project.extensions.multitool.relocates.each { pattern, destination ->
+                task.relocate(pattern, destination) { relocator ->
+                    project.extensions.multitool.includeInRelocation.each {
+                        includePattern -> relocator.include includePattern
+                    }
+                    project.extensions.multitool.excludeFromRelocation.each {
+                        excludePattern -> relocator.exclude excludePattern
+                    }
+                }
             }
         }
 
@@ -196,20 +207,33 @@ class MultitoolPlugin implements Plugin<Project> {
         def shadowJar = project.tasks.shadowJar
         shadowJar.classifier = 'shadow'
 
+        // build list of shadowed artifacts (irrespective of version) 
+        Set showedArtifacts = []
+		project.configurations.shadow.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+		     def id =  artifact.name + ":" + artifact.classifier
+		     showedArtifacts += id
+		}
+
         // ProGuard needs reference to JDK rt.jar
         def javaHome = System.getProperty('java.home')
         def libJars = project.fileTree(dir: javaHome + "/lib/", include: "*.jar")
 
-        // need to give it dependencies that were not compiled into jar
-        def compileJars = project.configurations.compile.getFiles()
-        libJars += compileJars
-
+        // ProGuard needs reference to jars that we didn't shadow
+		project.configurations.compile.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+		     def id =  artifact.name + ":" + artifact.classifier
+		     if(!showedArtifacts.contains(id)) {
+		         libJars += artifact.file
+		     }
+		}
+        
+        // create ProGuard task to do minification (e.g. removing class files we don't use) 
         def minify = project.task("minify", type:proguard.gradle.ProGuardTask, dependsOn:shadowJar) {
             injars shadowJar.archivePath
             outjars jarArchivePath
             libraryjars libJars
         }
 
+        // configure ProGuard
         project.extensions.multitool.proguardOptions.each { key, value ->
              if(value!=null) {
                  minify."$key"(value)
