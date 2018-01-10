@@ -44,19 +44,8 @@ class MultitoolPluginExtension {
     List<String> excludeFromRelocation = [
     ]
 
-    // filtering of input jar entries
-    Map<String,String> injarsFilters = [
-        // see: https://sourceforge.net/p/proguard/bugs/665/
-        "filter": "!META-INF/versions/9/**.class"
-    ]
-
-    // filtering of library jar entries
-    Map<String,String> libraryjarsFilters = [
-        // see: https://sourceforge.net/p/proguard/bugs/665/
-        "filter": "!META-INF/versions/9/**.class"
-    ]
-
-    Map<String,String> outjarsFilters = [:]
+    // true if we should minify after relocation
+    boolean configureMinify = true
 
     // ProGuard options for minification
     Map<String,Object> proguardOptions = [
@@ -88,4 +77,18 @@ class MultitoolPluginExtension {
         'dontobfuscate' : null,
         'dontwarn' : null,
     ]
+    
+    // filtering of input jar entries
+    Map<String,String> injarsFilters = [
+        // see: https://sourceforge.net/p/proguard/bugs/665/
+        "filter": "!META-INF/versions/9/**.class"
+    ]
+
+    // filtering of library jar entries
+    Map<String,String> libraryjarsFilters = [
+        // see: https://sourceforge.net/p/proguard/bugs/665/
+        "filter": "!META-INF/versions/9/**.class"
+    ]
+
+    Map<String,String> outjarsFilters = [:]
 }

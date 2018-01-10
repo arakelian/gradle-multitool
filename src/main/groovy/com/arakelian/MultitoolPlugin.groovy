@@ -109,17 +109,32 @@ class MultitoolPlugin implements Plugin<Project> {
             from project.sourceSets.main.allSource
         }
 
-        project.task("testJar", type:org.gradle.jvm.tasks.Jar, dependsOn:project.testClasses) {
-            classifier = 'tests'
-            from project.sourceSets.test.output
-        }
-
-        // other projects may want to extend our unit tests
-        if(project.plugins.hasPlugin("com.github.johnrengelman.shadow")) {
-            project.task("shadowTestJar", type:ShadowJar, dependsOn:project.testClasses) {
-                classifier = 'shadow-tests'
+        if(project.extensions.multitool.configureMinify) {
+            project.task("testJar", type:org.gradle.jvm.tasks.Jar, dependsOn:project.testClasses) {
+                classifier = 'tests'
                 from project.sourceSets.test.output
-                configurations = [project.configurations.testRuntime]
+            }
+
+            // other projects may want to extend our unit tests
+            if(project.plugins.hasPlugin("com.github.johnrengelman.shadow")) {
+                project.task("shadowTestJar", type:ShadowJar, dependsOn:project.testClasses) {
+                    classifier = 'shadow-tests'
+                    from project.sourceSets.test.output
+                    configurations = [project.configurations.testRuntime]
+                }
+            }
+        } else {
+            if(project.plugins.hasPlugin("com.github.johnrengelman.shadow")) {
+                project.task("testJar", type:ShadowJar, dependsOn:project.testClasses) {
+                    classifier = 'tests'
+                    from project.sourceSets.test.output
+                    configurations = [project.configurations.shadow]
+                }
+            } else {
+                project.task("testJar", type:org.gradle.jvm.tasks.Jar, dependsOn:project.testClasses) {
+                    classifier = 'tests'
+                    from project.sourceSets.test.output
+                }
             }
         }
 
@@ -205,6 +220,18 @@ class MultitoolPlugin implements Plugin<Project> {
         def jarArchivePath = jar.archivePath
         jar.enabled = false
 
+        if(project.extensions.multitool.configureMinify) {
+            // -shadow.jar is temporary artifact processed by ProGuard
+            configureMinify(project, jarArchivePath)
+        } else {
+            // -shadow.jar replaces .jar
+            def shadowJar = project.tasks.shadowJar
+            shadowJar.classifier = ''
+	        project.tasks.assemble.dependsOn(shadowJar)
+        }
+    }
+
+    void configureMinify(Project project, jarArchivePath) {
         // build list of shadowed artifacts (irrespective of version)
         Set shadowedArtifacts = []
         project.configurations.shadow.resolvedConfiguration.resolvedArtifacts.each { artifact ->
@@ -264,11 +291,11 @@ class MultitoolPlugin implements Plugin<Project> {
              if(value!=null) {
                  if(value instanceof Collection || value instanceof Object[]) {
                      value.each {
-                         minify.doFirst { project.logger.info key + ": " + it } 
-                         minify."$key"(it) 
+                         minify.doFirst { project.logger.info key + ": " + it }
+                         minify."$key"(it)
                      }
                  } else {
-                     minify.doFirst { project.logger.info key + ": " + value } 
+                     minify.doFirst { project.logger.info key + ": " + value }
                      minify."$key"(value)
                  }
              } else {
