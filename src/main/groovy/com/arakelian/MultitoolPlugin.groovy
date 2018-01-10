@@ -368,6 +368,7 @@ class MultitoolPlugin implements Plugin<Project> {
                                         project_refs += [ match ]
                                     }
                                 }
+                                entry.exported = true
                             }
                         }
                         classpath.entries.removeAll(matched_libs)
