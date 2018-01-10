@@ -262,8 +262,17 @@ class MultitoolPlugin implements Plugin<Project> {
         // configure ProGuard
         project.extensions.multitool.proguardOptions.each { key, value ->
              if(value!=null) {
-                 minify."$key"(value)
+                 if(value instanceof Collection || value instanceof Object[]) {
+                     value.each {
+                         minify.doFirst { project.logger.info key + ": " + it } 
+                         minify."$key"(it) 
+                     }
+                 } else {
+                     minify.doFirst { project.logger.info key + ": " + value } 
+                     minify."$key"(value)
+                 }
              } else {
+                 minify.doFirst { project.logger.info key }
                  minify."$key"()
              }
         }

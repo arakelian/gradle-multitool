@@ -61,10 +61,27 @@ class MultitoolPluginExtension {
     // ProGuard options for minification
     Map<String,Object> proguardOptions = [
         // this work for us, but other clients will want to change this
-        'keep' : 'class com.arakelian.** { *; }',
+        'keep' : [
+            'class com.arakelian.** { *; }'
+        ],
+        
+        'keepattributes' : [
+            'Exceptions',
+            'InnerClasses',
+            'Signature',
+            'Deprecated',
+            'SourceFile',
+            'LineNumberTable',
+            '*Annotation*',
+            'EnclosingMethod'
+        ],
 
         // see: https://sourceforge.net/p/proguard/bugs/459/
-        'optimizations' : '!code/allocation/variable,!class/unboxing/*,!method/marking/*',
+        'optimizations' : [
+            '!code/allocation/variable',
+            '!class/unboxing/*',
+            '!method/marking/*'
+        ],
 
         'optimizationpasses' : 5,
         'dontskipnonpubliclibraryclassmembers' : null,
