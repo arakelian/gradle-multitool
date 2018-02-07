@@ -71,6 +71,27 @@ class MultitoolPluginExtension {
 		'keep' : [
 			'class com.arakelian.** { *; }'
 		],
+		
+		'keepclassmembers' : [
+			// cannot be removed or obfuscated
+            'class * implements java.io.Serializable {' +
+			' static final long serialVersionUID;' +
+			' private static final java.io.ObjectStreamField[] serialPersistentFields;' +
+			' private void writeObject(java.io.ObjectOutputStream);' +
+			' private void readObject(java.io.ObjectInputStream);' +
+			' java.lang.Object writeReplace();' +
+			' java.lang.Object readResolve();' +
+			'}'
+		],
+		
+		'keepclassmembers,allowoptimization' : [
+			// cannot be removed or obfuscated
+			'enum * { public static **[] values(); public static ** valueOf(java.lang.String);',
+		],
+		
+		'keepclasseswithmembernames,includedescriptorclasses' : [
+			'class * { native <methods>; }'
+		],
 
 		'keepattributes' : [
 			'Exceptions',
