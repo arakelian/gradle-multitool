@@ -74,12 +74,12 @@ class MultitoolPluginExtension {
 		
 		'keepclassmembers' : [
 			[ 
-				// critical for enumerations
-				args : 'allowoptimization',
-				value : 'enum * { public static **[] values(); public static ** valueOf(java.lang.String);'
+				// protect enumerations
+				keepArgs : 'allowoptimization',
+				classSpecificationString : 'enum * { public static **[] values(); public static ** valueOf(java.lang.String);'
 			],
 			
-			// critical for serialization
+			// protect serialization
             'class * implements java.io.Serializable {' +
 			' static final long serialVersionUID;' +
 			' private static final java.io.ObjectStreamField[] serialPersistentFields;' +
@@ -88,12 +88,14 @@ class MultitoolPluginExtension {
 			' java.lang.Object writeReplace();' +
 			' java.lang.Object readResolve();' +
 			'}',
-			
+		],
+		
+		'keepclasseswithmembernames' : [
 			[
-				// don't remove native methods 
-				args : 'includedescriptorclasses',
-				value : 'class * { native <methods>; }'
-			],
+				// protect native methods
+				keepArgs : 'includedescriptorclasses',
+				classSpecificationString : 'class * { native <methods>; }'
+			]
 		],
 
 		'keepattributes' : [
