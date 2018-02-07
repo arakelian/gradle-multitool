@@ -73,7 +73,13 @@ class MultitoolPluginExtension {
 		],
 		
 		'keepclassmembers' : [
-			// cannot be removed or obfuscated
+			[ 
+				// critical for enumerations
+				args : 'allowoptimization',
+				value : 'enum * { public static **[] values(); public static ** valueOf(java.lang.String);'
+			],
+			
+			// critical for serialization
             'class * implements java.io.Serializable {' +
 			' static final long serialVersionUID;' +
 			' private static final java.io.ObjectStreamField[] serialPersistentFields;' +
@@ -81,16 +87,13 @@ class MultitoolPluginExtension {
 			' private void readObject(java.io.ObjectInputStream);' +
 			' java.lang.Object writeReplace();' +
 			' java.lang.Object readResolve();' +
-			'}'
-		],
-		
-		'keepclassmembers,allowoptimization' : [
-			// cannot be removed or obfuscated
-			'enum * { public static **[] values(); public static ** valueOf(java.lang.String);',
-		],
-		
-		'keepclasseswithmembernames,includedescriptorclasses' : [
-			'class * { native <methods>; }'
+			'}',
+			
+			[
+				// don't remove native methods 
+				args : 'includedescriptorclasses',
+				value : 'class * { native <methods>; }'
+			],
 		],
 
 		'keepattributes' : [
