@@ -25,7 +25,7 @@ class MultitoolPluginExtension {
 		'-Xep:OperatorPrecedence:OFF'
 	]
 
-	
+
 	// useful macros, you can add your own
 	Map<String,List<String>> macros = [
 		'all' : [
@@ -65,62 +65,64 @@ class MultitoolPluginExtension {
 	// true if we should minify after relocation
 	boolean configureMinify = true
 
-	// ProGuard options for minification
-	Map<String,Object> proguardOptions = [
-		// this work for us, but other clients will want to change this
-		'keep' : [
-			'class com.arakelian.** { *; }'
-		],
-		
-		'keepclassmembers' : [
-			[ 
-				// protect enumerations
-				keepArgs : 'allowoptimization',
-				classSpecificationString : 'enum * { public static **[] values(); public static ** valueOf(java.lang.String);'
-			],
-			
-			// protect serialization
-            'class * implements java.io.Serializable {' +
-			' static final long serialVersionUID;' +
-			' private static final java.io.ObjectStreamField[] serialPersistentFields;' +
-			' private void writeObject(java.io.ObjectOutputStream);' +
-			' private void readObject(java.io.ObjectInputStream);' +
-			' java.lang.Object writeReplace();' +
-			' java.lang.Object readResolve();' +
-			'}',
-		],
-		
-		'keepclasseswithmembernames' : [
-			[
-				// protect native methods
-				keepArgs : 'includedescriptorclasses',
-				classSpecificationString : 'class * { native <methods>; }'
-			]
-		],
+	// configure ProGaurd
+	Closure proguardConfiguration = null
 
-		'keepattributes' : [
-			'Exceptions',
-			'InnerClasses',
-			'Signature',
-			'Deprecated',
-			'SourceFile',
-			'LineNumberTable',
-			'*Annotation*',
-			'EnclosingMethod'
-		],
+	// ProGuard options for minification
+	Closure defaultProguardConfiguration = {
+		keep includedescriptorclasses:true, 'class com.arakelian.** { *; }'
+
+        // Preserve the special static methods that are required in all enumeration classes.
+        keepclassmembers allowoptimization:true, \
+            'enum * { \
+                <fields>; \
+                public static **[] values(); \
+                public static ** valueOf(java.lang.String); \
+            }'
+
+        // Explicitly preserve all serialization members
+        keepclassmembers \
+            'class * implements java.io.Serializable { \
+                static final long serialVersionUID; \
+                static final java.io.ObjectStreamField[] serialPersistentFields; \
+                private void writeObject(java.io.ObjectOutputStream); \
+                private void readObject(java.io.ObjectInputStream); \
+                java.lang.Object writeReplace(); \
+                java.lang.Object readResolve(); \
+            }'
+
+		keepclasseswithmembernames includedescriptorclasses:true, 'class * { native <methods>; }'
+
+		keepattributes 'Exceptions'
+		keepattributes 'InnerClasses'
+		keepattributes 'Signature'
+		keepattributes 'Deprecated'
+		keepattributes 'SourceFile'
+		keepattributes 'LineNumberTable'
+		keepattributes '*Annotation*'
+		keepattributes 'EnclosingMethod'
 
 		// see: https://sourceforge.net/p/proguard/bugs/459/
-		'optimizations' : [
-			'!code/allocation/variable',
-			'!class/unboxing/*',
-			'!method/marking/*'
-		],
+		optimizations '!code/allocation/variable'
+		optimizations '!class/unboxing/*'
+		optimizations '!method/marking/*'
 
-		'optimizationpasses' : 5,
-		'dontskipnonpubliclibraryclassmembers' : null,
-		'dontobfuscate' : null,
-		'dontwarn' : null,
-	]
+        dontnote '**.com.google.common.base.Throwables'
+        dontnote '**.com.google.common.base.internal.Finalizer'
+        dontnote '**.com.google.common.cache.Striped64$Cell'
+        dontnote '**.com.google.common.cache.Striped64'
+        dontnote '**.com.google.common.hash.Striped64$Cell'
+        dontnote '**.com.google.common.hash.Striped64'
+        dontnote '**.com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper'
+        dontnote '**.com.google.common.util.concurrent.AbstractFuture'
+        dontnote '**.com.google.common.util.concurrent.MoreExecutors'
+		
+		optimizationpasses 2
+
+		dontskipnonpubliclibraryclassmembers()
+		dontobfuscate()
+		dontwarn()
+	}
 
 	// filtering of input jar entries
 	Map<String,String> injarsFilters = [

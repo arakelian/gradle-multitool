@@ -282,33 +282,31 @@ class MultitoolPlugin implements Plugin<Project> {
 		}
 
 		// create ProGuard task to do minification (e.g. removing class files we don't use)
-		def minify = project.task(name, type:proguard.gradle.ProGuardTask, dependsOn:shadowJarTask) {
+		proguard.gradle.ProGuardTask proguardTask = project.task(name, type:proguard.gradle.ProGuardTask, dependsOn:shadowJarTask) {
 			injars project.extensions.multitool.injarsFilters, shadowJarTask.archivePath
 			outjars project.extensions.multitool.outjarsFilters, jarArchivePath
 			libraryjars project.extensions.multitool.libraryjarsFilters, libJars
 		}
 
-		// configure ProGuard
-		project.extensions.multitool.proguardOptions.each { key, value ->
-			if(value!=null) {
-				if(value instanceof Collection || value instanceof Object[]) {
-					value.each {
-						minify.doFirst { project.logger.info key + ": " + it }
-						minify."$key"(it)
-					}
-				} else {
-					minify.doFirst { project.logger.info key + ": " + value }
-					minify."$key"(value)
-				}
-			} else {
-				minify.doFirst { project.logger.info key }
-				minify."$key"()
-			}
+		// configure with defaults
+		Closure closure = project.extensions.multitool.defaultProguardConfiguration
+		if(closure!=null) {
+			closure.delegate = proguardTask
+			closure.resolveStrategy = Closure.DELEGATE_FIRST
+			closure()
 		}
 
-		// make sure we minify first
+		// custom configuration
+		closure = project.extensions.multitool.proguardConfiguration
+		if(closure!=null) {
+			closure.delegate = proguardTask
+			closure.resolveStrategy = Closure.DELEGATE_FIRST
+			closure()
+		}
+
+		// make sure we proguardTask first
 		def assemble = project.tasks.assemble
-		assemble.dependsOn(minify)
+		assemble.dependsOn(proguardTask)
 	}
 
 	void configureEclipseClasspath(Project project) {
