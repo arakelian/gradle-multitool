@@ -11,7 +11,7 @@ class MultitoolPlugin implements Plugin<Project> {
 		// users can configure this plugin using 'multitool' of type MultitoolPluginExtension
 		project.extensions.add("multitool", MultitoolPluginExtension)
 
-		// we expose this configuration
+		// mimic Maven 'provided' configuration, as suggested in GRADLE-784
 		project.configurations.create('provided')
 
 		project.task("shadowSources", type: ShadowSources) {
@@ -147,20 +147,22 @@ class MultitoolPlugin implements Plugin<Project> {
 	}
 
 	void configureJavaProvided(Project project) {
-		// mimic Maven 'provided' configuration, as suggested in GRADLE-784
-		def provided = project.configurations.provided
-		provided.extendsFrom(project.configurations.compile)
-
 		project.configurations {
 			project.extensions.multitool.excludeGroups.each{ group ->
 				all*.exclude group: group
 			}
 		}
 
+		project.javadoc {
+			classpath += project.configurations.provided
+		}
+		
+		project.configurations.provided.extendsFrom(project.configurations.compile)
+		
 		project.sourceSets {
-			main.compileClasspath += [ provided ]
-			test.compileClasspath += [ provided ]
-			test.runtimeClasspath += [ provided ]
+			main.compileClasspath += project.configurations.provided
+			test.compileClasspath += project.configurations.provided
+			test.runtimeClasspath += project.configurations.provided
 		}
 
 		project.plugins.withType(org.gradle.plugins.ide.idea.IdeaPlugin, { plugin ->
