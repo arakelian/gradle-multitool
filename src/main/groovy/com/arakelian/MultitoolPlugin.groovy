@@ -3,9 +3,8 @@ package com.arakelian
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.compile.JavaCompile
+
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
-import java.util.regex.Pattern
 
 class MultitoolPlugin implements Plugin<Project> {
 	void apply(Project project) {
@@ -159,9 +158,9 @@ class MultitoolPlugin implements Plugin<Project> {
 		}
 
 		project.sourceSets {
-			main.compileClasspath += project.configurations.provided
-			test.compileClasspath += project.configurations.provided
-			test.runtimeClasspath += project.configurations.provided
+			main.compileClasspath += [ provided ]
+			test.compileClasspath += [ provided ]
+			test.runtimeClasspath += [ provided ]
 		}
 
 		project.plugins.withType(org.gradle.plugins.ide.idea.IdeaPlugin, { plugin ->
