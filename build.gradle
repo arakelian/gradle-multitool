@@ -9,7 +9,7 @@ plugins {
     id 'idea'
     
     // for building fat jar
-    id "com.github.johnrengelman.shadow" version "2.0.2"
+    id "com.github.johnrengelman.shadow" version "2.0.4"
 }
 
 group  = 'com.arakelian'
@@ -31,14 +31,14 @@ dependencies {
     compile localGroovy()
     
     // library is huge so we don't shadow it
-    compile 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
+    compile 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
 
     // proguard is not available via Maven so this is very convenient    
     shadow files('lib/proguard.jar')
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.5.1'
+    gradleVersion = '4.8'
 }
 
 uploadArchives {
