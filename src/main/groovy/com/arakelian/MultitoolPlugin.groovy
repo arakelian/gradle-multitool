@@ -97,9 +97,9 @@ class MultitoolPlugin implements Plugin<Project> {
 		// generated sources should not be added to /build/classes/java/<sourceSet>; instead,
 		// they need to go to a separate folder so they end up in -sources.jar only
 		// see: https://github.com/gradle/gradle/issues/4956
-		project.compileJava {
+		project.tasks.withType(JavaCompile) { task ->
 			String relativePath = "build/generated/src/main/java"
-			sourceSets.main.java { srcDir relativePath }
+			project.sourceSets.main.java { srcDir relativePath }
 			
 			File generatedSourceDir = project.file(relativePath)
 			project.mkdir(generatedSourceDir)
