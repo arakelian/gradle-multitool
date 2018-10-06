@@ -349,7 +349,7 @@ class MultitoolPlugin implements Plugin<Project> {
 				// customize generated .classpath file
 				file {
 					def project_refs = []
-					def matched_libs = []
+					def remove_entries = []
 
 					// closure executed after .classpath content is loaded from existing file
 					// and after gradle build information is merged
@@ -380,14 +380,16 @@ class MultitoolPlugin implements Plugin<Project> {
 									if(matcher.find()) {
 										def match = matcher.group(1)
 										println match + ' (' + matcher.group(2) + ') matched ' + entry.path
-										matched_libs += [entry]
+										remove_entries += [entry]
 										project_refs += [match]
 									}
 								}
 								entry.exported = true
+							} else if(entry.kind.equals('src') && entry.path.equals('build/generated/src/main/java')) {
+								remove_entries += [entry]
 							}
 						}
-						classpath.entries.removeAll(matched_libs)
+						classpath.entries.removeAll(remove_entries)
 					}
 
 					// final adjustments to .classpath file before it is saved
