@@ -99,6 +99,7 @@ class MultitoolPlugin implements Plugin<Project> {
 		// see: https://github.com/gradle/gradle/issues/4956
 		project.tasks.withType(JavaCompile) { task ->
 			String relativePath = "build/generated/src/main/java"
+			project.extensions.multitool.excludeFromEclipse += relativePath
 			project.sourceSets.main.java { srcDir relativePath }
 			
 			File generatedSourceDir = project.file(relativePath)
@@ -385,8 +386,12 @@ class MultitoolPlugin implements Plugin<Project> {
 									}
 								}
 								entry.exported = true
-							} else if(entry.kind.equals('src') && entry.path.equals('build/generated/src/main/java')) {
-								remove_entries += [entry]
+							} else if(entry.kind.equals('src')) {
+								project.extensions.multitool.excludeFromEclipse.each { path ->
+									if(entry.path.equals(path)) {
+										remove_entries += [entry]
+									 }
+	 							}
 							}
 						}
 						classpath.entries.removeAll(remove_entries)

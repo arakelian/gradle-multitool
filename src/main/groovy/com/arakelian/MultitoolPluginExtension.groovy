@@ -62,6 +62,9 @@ class MultitoolPluginExtension {
 	// package patterns to exclude from relocation
 	List<String> excludeFromRelocation = []
 
+	// package patterns to exclude from relocation
+	List<String> excludeFromEclipse = []
+
 	// true if we should minify after relocation
 	boolean configureMinify = true
 
