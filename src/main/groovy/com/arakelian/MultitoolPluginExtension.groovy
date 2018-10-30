@@ -24,6 +24,13 @@ class MultitoolPluginExtension {
 		'-XepDisableWarningsInGeneratedCode',
 		'-Xep:OperatorPrecedence:OFF'
 	]
+	
+	
+	// Eclipse output folder
+	String eclipseOutputFolder = "target"
+	
+	// package patterns to exclude from Eclipse
+	List<String> excludeFromEclipse = []
 
 
 	// useful macros, you can add your own
@@ -61,9 +68,6 @@ class MultitoolPluginExtension {
 
 	// package patterns to exclude from relocation
 	List<String> excludeFromRelocation = []
-
-	// package patterns to exclude from relocation
-	List<String> excludeFromEclipse = []
 
 	// true if we should minify after relocation
 	boolean configureMinify = true

@@ -336,7 +336,7 @@ class MultitoolPlugin implements Plugin<Project> {
 		project.eclipse {
 			classpath {
 				// override default 'bin'
-				defaultOutputDir = project.file('target/classes')
+				defaultOutputDir = project.file(project.extensions.multitool.eclipseOutputFolder + '/classes')
 
 				// ensure that 'provided' configuration jars available in Eclipose
 				plusConfigurations += [
@@ -393,7 +393,7 @@ class MultitoolPlugin implements Plugin<Project> {
 									 }
 	 							}
 								if(entry.output.startsWith("bin/")) {
-									entry.output = "target/" + entry.output.substring(4)
+									entry.output = project.extensions.multitool.eclipseOutputFolder + "/" + entry.output.substring(4)
 								}
 							}
 						}
