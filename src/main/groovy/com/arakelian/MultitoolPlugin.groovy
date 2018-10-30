@@ -392,6 +392,9 @@ class MultitoolPlugin implements Plugin<Project> {
 										remove_entries += [entry]
 									 }
 	 							}
+								if(entry.output.startsWith("bin/")) {
+									entry.output = "target/" + entry.output.substring(4)
+								}
 							}
 						}
 						classpath.entries.removeAll(remove_entries)
