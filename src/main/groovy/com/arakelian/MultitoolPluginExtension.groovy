@@ -2,7 +2,7 @@ package com.arakelian
 
 class MultitoolPluginExtension {
 	// target Java version
-	String javaVersion = "1.8"
+	String javaVersion = "11"
 
 	// true if we should configure "repositories" to use mavenLocal(), mavenCentral() and then jcenter()
 	boolean configureRepos = true
