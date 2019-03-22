@@ -88,7 +88,7 @@ class MultitoolPlugin implements Plugin<Project> {
 
 			// Eclipse code formatting removes extraneous parenthesis which errorprone complains about
 			if (project.plugins.hasPlugin('net.ltgt.errorprone')) {
-				options.compilerArgs += project.extensions.multitool.errorproneCompilerOptions
+				options.errorprone.errorproneArgs += project.extensions.multitool.errorproneCompilerOptions
 			}
 		}
 	}
