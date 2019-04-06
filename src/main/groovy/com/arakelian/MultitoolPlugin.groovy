@@ -267,7 +267,8 @@ class MultitoolPlugin implements Plugin<Project> {
 				shadowedArtifacts,
 				project.configurations.compile.resolvedConfiguration.resolvedArtifacts,
 				shadowJar,
-				jarArchivePath)
+				jarArchivePath,
+				null)
 
 
 		def testJar = project.tasks.testJar
@@ -280,13 +281,22 @@ class MultitoolPlugin implements Plugin<Project> {
 				shadowedArtifacts,
 				project.configurations.testCompile.resolvedConfiguration.resolvedArtifacts,
 				project.tasks.shadowTestJar,
-				testJarArchivePath)
+				testJarArchivePath,
+				jarArchivePath)
 	}
 
-	void configureProguard(Project project, String name, Set shadowedArtifacts, Set resolvedArtifacts, Object shadowJarTask, File jarArchivePath) {
+	void configureProguard(Project project, String name, Set shadowedArtifacts, Set resolvedArtifacts, Object jarTask, File jarArchivePath, File extraLibJar) {
 		// ProGuard needs reference to JDK rt.jar
 		def javaHome = System.getProperty('java.home')
-		def libJars = project.fileTree(dir: javaHome + "/lib/", include: "*.jar")
+		def libJars = project.fileTree (javaHome + "/jmods/")
+		
+		// configure with defaults
+		Closure closure = project.extensions.multitool.proguardJmods
+		if(closure!=null) {
+			closure.delegate = libJars
+			closure.resolveStrategy = Closure.DELEGATE_FIRST
+			closure()
+		}
 
 		// ProGuard needs reference to jars that we didn't shadow
 		resolvedArtifacts.each { artifact ->
@@ -295,16 +305,25 @@ class MultitoolPlugin implements Plugin<Project> {
 				libJars += artifact.file
 			}
 		}
+		
+		if(extraLibJar!=null) {
+			libJars += extraLibJar
+		}
 
+		println '------------- ProGuard: ' + name
+		println 'outjars: ' + jarArchivePath
+		println 'injars:  ' + jarTask.archivePath
+		println 'libjars: ' + libJars.join('\n         ')
+		 
 		// create ProGuard task to do minification (e.g. removing class files we don't use)
-		proguard.gradle.ProGuardTask proguardTask = project.task(name, type:proguard.gradle.ProGuardTask, dependsOn:shadowJarTask) {
-			injars project.extensions.multitool.injarsFilters, shadowJarTask.archivePath
+		proguard.gradle.ProGuardTask proguardTask = project.task(name, type:proguard.gradle.ProGuardTask, dependsOn:jarTask) {
+			injars project.extensions.multitool.injarsFilters, jarTask.archivePath
 			outjars project.extensions.multitool.outjarsFilters, jarArchivePath
-			libraryjars project.extensions.multitool.libraryjarsFilters, libJars
+			libraryjars project.extensions.multitool.libraryjarsFilters, libJars 
 		}
 
 		// configure with defaults
-		Closure closure = project.extensions.multitool.defaultProguardConfiguration
+		closure = project.extensions.multitool.defaultProguardConfiguration
 		if(closure!=null) {
 			closure.delegate = proguardTask
 			closure.resolveStrategy = Closure.DELEGATE_FIRST

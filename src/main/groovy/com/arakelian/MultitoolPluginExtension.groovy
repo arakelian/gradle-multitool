@@ -74,6 +74,16 @@ class MultitoolPluginExtension {
 
 	// configure ProGaurd
 	Closure proguardConfiguration = null
+	
+	// ProGuard includes
+	Closure proguardJmods = {
+		include "java.*.jmod"
+		
+		// aggregators
+		exclude "java.se.jmod"
+		exclude "java.se.ee.jmod"
+		exclude "jdk.jdwp.agent"
+	}
 
 	// ProGuard options for minification
 	Closure defaultProguardConfiguration = {
@@ -113,22 +123,13 @@ class MultitoolPluginExtension {
 		optimizations '!code/allocation/variable'
 		optimizations '!class/unboxing/*'
 		optimizations '!method/marking/*'
-
-        dontnote '**.com.google.common.base.Throwables'
-        dontnote '**.com.google.common.base.internal.Finalizer'
-        dontnote '**.com.google.common.cache.Striped64$Cell'
-        dontnote '**.com.google.common.cache.Striped64'
-        dontnote '**.com.google.common.hash.Striped64$Cell'
-        dontnote '**.com.google.common.hash.Striped64'
-        dontnote '**.com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper'
-        dontnote '**.com.google.common.util.concurrent.AbstractFuture'
-        dontnote '**.com.google.common.util.concurrent.MoreExecutors'
 		
 		optimizationpasses 2
 
 		dontskipnonpubliclibraryclassmembers()
 		dontobfuscate()
-		dontwarn()
+		
+		dontwarn 'sun.misc.Unsafe'
 	}
 
 	// filtering of input jar entries
