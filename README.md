@@ -2,8 +2,8 @@
 
 This Gradle plugin does a few things:
 
-1. Configures Java builds for Java 8.  
-   * Source and target compatibility is set to 1.8. 
+1. Configures Java builds for Java 11.  
+   * Source and target compatibility is set to version 11. 
    * Java compiler is configured to export names of constructor and method argument names.
 
 2. Adds -sources, -javadoc, and -tests Jars to a Java build.
