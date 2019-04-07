@@ -119,20 +119,15 @@ class MultitoolPluginExtension {
 		keepattributes '*Annotation*'
 		keepattributes 'EnclosingMethod'
 
-		// see: https://sourceforge.net/p/proguard/bugs/459/
-		optimizations '!code/allocation/variable'
-		optimizations '!class/unboxing/*'
-		optimizations '!class/merging/*'
-		optimizations '!class/marking/*'
-		optimizations '!field/marking/*'
-		optimizations '!method/marking/*'
-		optimizations '!method/inlining/*'
-		 
-		optimizationpasses 2
+		// causes too many issues
+		dontoptimize
 
 		dontskipnonpubliclibraryclassmembers()
-		dontobfuscate()
 		
+		// we're not interested in obfuscation, just code shrinking
+		dontobfuscate()
+
+		// guava		
 		dontwarn 'sun.misc.Unsafe'
 	}
 
