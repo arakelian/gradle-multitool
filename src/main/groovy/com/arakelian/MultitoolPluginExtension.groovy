@@ -122,8 +122,12 @@ class MultitoolPluginExtension {
 		// see: https://sourceforge.net/p/proguard/bugs/459/
 		optimizations '!code/allocation/variable'
 		optimizations '!class/unboxing/*'
+		optimizations '!class/merging/*'
+		optimizations '!class/marking/*'
+		optimizations '!field/marking/*'
 		optimizations '!method/marking/*'
-		
+		optimizations '!method/inlining/*'
+		 
 		optimizationpasses 2
 
 		dontskipnonpubliclibraryclassmembers()
