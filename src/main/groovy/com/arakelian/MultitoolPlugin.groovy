@@ -82,6 +82,9 @@ class MultitoolPlugin implements Plugin<Project> {
 			sourceCompatibility = project.extensions.multitool.javaVersion
 			targetCompatibility = project.extensions.multitool.javaVersion
 
+			// always UTF-8
+			options.encoding = 'UTF-8'
+
 			// java 8 option which export names of constructor and method parameter names; no longer
 			// have to declare parameter names with @JsonCreator
 			options.compilerArgs << "-parameters"

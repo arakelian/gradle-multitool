@@ -2,7 +2,7 @@ package com.arakelian
 
 class MultitoolPluginExtension {
 	// target Java version
-	String javaVersion = "11"
+	String javaVersion = "8"
 
 	// true if we should configure "repositories" to use mavenLocal(), mavenCentral() and then jcenter()
 	boolean configureRepos = true
@@ -22,6 +22,7 @@ class MultitoolPluginExtension {
 	// dependency groups that we exclude from all configurations
 	List<String> errorproneCompilerOptions = [
 		'-XepDisableWarningsInGeneratedCode',
+		'-Xep:FutureReturnValueIgnored:OFF',
 		'-Xep:OperatorPrecedence:OFF'
 	]
 	
