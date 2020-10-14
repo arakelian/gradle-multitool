@@ -91,7 +91,7 @@ class MultitoolPlugin implements Plugin<Project> {
 
 			// Eclipse code formatting removes extraneous parenthesis which errorprone complains about
 			if (project.plugins.hasPlugin('net.ltgt.errorprone')) {
-				options.errorprone.errorproneArgs += project.extensions.multitool.errorproneCompilerOptions
+				options.errorprone.errorproneArgs.add project.extensions.multitool.errorproneCompilerOptions
 			}
 		}
 	}
@@ -102,7 +102,7 @@ class MultitoolPlugin implements Plugin<Project> {
 		// see: https://github.com/gradle/gradle/issues/4956
 		project.tasks.withType(JavaCompile) { task ->
 			String relativePath = "build/generated/src/main/java"
-			project.extensions.multitool.excludeFromEclipse += relativePath
+			project.extensions.multitool.excludeFromEclipse.add relativePath
 			project.sourceSets.main.java { srcDir relativePath }
 			
 			File generatedSourceDir = project.file(relativePath)
@@ -171,15 +171,15 @@ class MultitoolPlugin implements Plugin<Project> {
 		}
 
 		project.javadoc {
-			classpath += project.configurations.provided
+			classpath.add project.configurations.provided
 		}
 		
 		project.configurations.provided.extendsFrom(project.configurations.compile)
 		
 		project.sourceSets {
-			main.compileClasspath += project.configurations.provided
-			test.compileClasspath += project.configurations.provided
-			test.runtimeClasspath += project.configurations.provided
+			main.compileClasspath.add project.configurations.provided
+			test.compileClasspath.add project.configurations.provided
+			test.runtimeClasspath.add project.configurations.provided
 		}
 
 		project.plugins.withType(org.gradle.plugins.ide.idea.IdeaPlugin, { plugin ->
@@ -187,7 +187,7 @@ class MultitoolPlugin implements Plugin<Project> {
 				project.idea {
 					module {
 						//if you need to put 'provided' dependencies on the classpath
-						scopes.PROVIDED.plus += [
+						scopes.PROVIDED.plus.add [
 							project.configurations.provided
 						]
 					}
@@ -206,8 +206,8 @@ class MultitoolPlugin implements Plugin<Project> {
 
 		project.sourceSets {
 			// shadow configuration is added by Shadow plugin, but it's only configured for the main sourceset
-			test.compileClasspath += project.configurations.shadow
-			test.runtimeClasspath += project.configurations.shadow
+			test.compileClasspath.add project.configurations.shadow
+			test.runtimeClasspath.add project.configurations.shadow
 		}
 
 		project.tasks.withType(ShadowJar).each { task ->
@@ -256,7 +256,7 @@ class MultitoolPlugin implements Plugin<Project> {
 		Set shadowedArtifacts = []
 		project.configurations.shadow.resolvedConfiguration.resolvedArtifacts.each { artifact ->
 			def id =  artifact.name + ":" + artifact.classifier
-			shadowedArtifacts += id
+			shadowedArtifacts.add id
 		}
 
 		// shadow artifact is temporary resource that is processed by ProGuard to
@@ -305,12 +305,12 @@ class MultitoolPlugin implements Plugin<Project> {
 		resolvedArtifacts.each { artifact ->
 			def id =  artifact.name + ":" + artifact.classifier
 			if(!shadowedArtifacts.contains(id)) {
-				libJars += artifact.file
+				libJars.add artifact.file
 			}
 		}
 		
 		if(extraLibJar!=null) {
-			libJars += extraLibJar
+			libJars.add extraLibJar
 		}
 
 		println '------------- ProGuard: ' + name
@@ -361,7 +361,7 @@ class MultitoolPlugin implements Plugin<Project> {
 				defaultOutputDir = project.file(project.extensions.multitool.eclipseOutputFolder + '/classes')
 
 				// ensure that 'provided' configuration jars available in Eclipose
-				plusConfigurations += [
+				plusConfigurations.add [
 					project.configurations.provided
 				]
 
@@ -383,7 +383,7 @@ class MultitoolPlugin implements Plugin<Project> {
 						def use_eclipse_project_refs = []
 						new File(project.projectDir, "..").eachDir {
 							if(new File("${it}/build.gradle").exists()) {
-								use_eclipse_project_refs += it.name
+								use_eclipse_project_refs.add it.name
 							}
 						}
 
@@ -403,15 +403,15 @@ class MultitoolPlugin implements Plugin<Project> {
 									if(matcher.find()) {
 										def match = matcher.group(1)
 										println match + ' (' + matcher.group(2) + ') matched ' + entry.path
-										remove_entries += [entry]
-										project_refs += [match]
+										remove_entries.add [entry]
+										project_refs.add [match]
 									}
 								}
 								entry.exported = true
 							} else if(entry.kind.equals('src')) {
 								project.extensions.multitool.excludeFromEclipse.each { path ->
 									if(entry.path.equals(path)) {
-										remove_entries += [entry]
+										remove_entries.add [entry]
 									 }
 	 							}
 								if(entry.output.startsWith("bin/")) {
