@@ -170,9 +170,9 @@ class MultitoolPlugin implements Plugin<Project> {
 			}
 		}
 
-		project.javadoc {
-			classpath.addAll project.configurations.provided
-		}
+//		project.javadoc {
+//			classpath.addAll project.configurations.provided
+//		}
 		
 		project.configurations.provided.extendsFrom(project.configurations.compile)
 		
