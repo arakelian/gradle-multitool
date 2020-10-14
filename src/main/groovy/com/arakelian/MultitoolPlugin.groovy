@@ -91,7 +91,7 @@ class MultitoolPlugin implements Plugin<Project> {
 
 			// Eclipse code formatting removes extraneous parenthesis which errorprone complains about
 			if (project.plugins.hasPlugin('net.ltgt.errorprone')) {
-				options.errorprone.errorproneArgs.add project.extensions.multitool.errorproneCompilerOptions
+				options.errorprone.errorproneArgs.addAll project.extensions.multitool.errorproneCompilerOptions
 			}
 		}
 	}
@@ -171,15 +171,15 @@ class MultitoolPlugin implements Plugin<Project> {
 		}
 
 		project.javadoc {
-			classpath.add project.configurations.provided
+			classpath.addAll project.configurations.provided
 		}
 		
 		project.configurations.provided.extendsFrom(project.configurations.compile)
 		
 		project.sourceSets {
-			main.compileClasspath.add project.configurations.provided
-			test.compileClasspath.add project.configurations.provided
-			test.runtimeClasspath.add project.configurations.provided
+			main.compileClasspath.addAll project.configurations.provided
+			test.compileClasspath.addAll project.configurations.provided
+			test.runtimeClasspath.addAll project.configurations.provided
 		}
 
 		project.plugins.withType(org.gradle.plugins.ide.idea.IdeaPlugin, { plugin ->
@@ -187,7 +187,7 @@ class MultitoolPlugin implements Plugin<Project> {
 				project.idea {
 					module {
 						//if you need to put 'provided' dependencies on the classpath
-						scopes.PROVIDED.plus.add [
+						scopes.PROVIDED.plus.addAll [
 							project.configurations.provided
 						]
 					}
@@ -206,8 +206,8 @@ class MultitoolPlugin implements Plugin<Project> {
 
 		project.sourceSets {
 			// shadow configuration is added by Shadow plugin, but it's only configured for the main sourceset
-			test.compileClasspath.add project.configurations.shadow
-			test.runtimeClasspath.add project.configurations.shadow
+			test.compileClasspath.addAll project.configurations.shadow
+			test.runtimeClasspath.addAll project.configurations.shadow
 		}
 
 		project.tasks.withType(ShadowJar).each { task ->
@@ -361,7 +361,7 @@ class MultitoolPlugin implements Plugin<Project> {
 				defaultOutputDir = project.file(project.extensions.multitool.eclipseOutputFolder + '/classes')
 
 				// ensure that 'provided' configuration jars available in Eclipose
-				plusConfigurations.add [
+				plusConfigurations.addAll [
 					project.configurations.provided
 				]
 
@@ -403,15 +403,15 @@ class MultitoolPlugin implements Plugin<Project> {
 									if(matcher.find()) {
 										def match = matcher.group(1)
 										println match + ' (' + matcher.group(2) + ') matched ' + entry.path
-										remove_entries.add [entry]
-										project_refs.add [match]
+										remove_entries.addAll [entry]
+										project_refs.addAll [match]
 									}
 								}
 								entry.exported = true
 							} else if(entry.kind.equals('src')) {
 								project.extensions.multitool.excludeFromEclipse.each { path ->
 									if(entry.path.equals(path)) {
-										remove_entries.add [entry]
+										remove_entries.addAll [entry]
 									 }
 	 							}
 								if(entry.output.startsWith("bin/")) {
