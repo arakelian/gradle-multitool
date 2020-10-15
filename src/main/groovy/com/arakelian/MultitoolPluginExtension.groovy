@@ -76,16 +76,6 @@ class MultitoolPluginExtension {
 	// configure ProGaurd
 	Closure proguardConfiguration = null
 	
-	// ProGuard includes
-	Closure proguardJmods = {
-		include "java.*.jmod"
-		
-		// aggregators
-		exclude "java.se.jmod"
-		exclude "java.se.ee.jmod"
-		exclude "jdk.jdwp.agent"
-	}
-
 	// ProGuard options for minification
 	Closure defaultProguardConfiguration = {
 		keep includedescriptorclasses:true, 'class com.arakelian.** { *; }'

@@ -34,7 +34,9 @@ dependencies {
     compile 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
 
     // proguard is not available via Maven so this is very convenient    
-    shadow files('lib/proguard.jar')
+    shadow files('lib/proguard-core-7.0.0.jar')
+    shadow files('lib/proguard-base-7.0.0.jar')
+    shadow files('lib/proguard-gradle-7.0.0.jar')
 }
 
 wrapper {
